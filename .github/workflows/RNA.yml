@@ -1,0 +1,32 @@
+name: Release Note Automation
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Version'
+        required: true
+      master_task:
+        description: 'ClickUp Master Task ID'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install requests google-generativeai google-api-python-client google-auth-httplib2 google-auth-oauthlib
+      - name: Run Script
+        env:
+          CLICKUP_API_TOKEN: ${{ secrets.CLICKUP_API_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          # 注意：OAuth 的 token.json 建議也存在 Secret 中或重新授權
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }} 
+        run: |
+          echo "$GOOGLE_CREDENTIALS_JSON" > credentials.json
+          python "Release note automation.py" --version "${{ github.event.inputs.version }}" --master_task "${{ github.event.inputs.master_task }}"
